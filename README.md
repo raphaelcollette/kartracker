@@ -1,5 +1,10 @@
-Fairly simple mario kart leaderboard tracker using OCR to parse leaderboard images
-Usage:
-Run the script and press F8 when on a cup's leaderboard
-Watchdog will detect a new screenshot, OCR will parse it and it will send a message in a discord channel
-It uses Postgres on Supabase free tier
+Mario Kart Leaderboard Tracker
+
+A simple Mario Kart leaderboard tracker using OCR to parse screenshots and post results to Discord.
+
+Features
+
+- OCR-powered parsing of Mario Kart cup leaderboard screenshots
+- Automatically posts race results to a specified Discord channel
+- Stores long-term stats (placement history, averages) in a cloud database
+- Uses PostgreSQL on [Supabase](https://supabase.com/) (free tier)
