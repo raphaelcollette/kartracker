@@ -15,7 +15,7 @@ SCREENSHOT_DIR = "screenshots"
 
 # OCR and Database Logic
 PLAYERS = ['Starz', 'ray', 'RAPH', 'bran', 'djtrader', 'BAKABAKABAKABAKABAKA',
-           'henry', 'Umbrella', 'jem', 'vortex']
+           'henry', 'Umbrella', 'jem', 'vortex', 'nut']
 reader = easyocr.Reader(['en'])
 
 def get_results(screenshot):
