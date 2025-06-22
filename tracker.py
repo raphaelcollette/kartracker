@@ -10,6 +10,8 @@ import discord
 import asyncio
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import tkinter as tk
+from tkinter import messagebox
 
 # Config
 SCREENSHOT_DIR = "screenshots"
@@ -45,6 +47,7 @@ def get_results(screenshot):
     parsed_results = []
     raw = reader.readtext(screenshot, detail=0)
     first_match_found = False
+    # print(raw)
     for idx, name in enumerate(raw):
         if name in PLAYERS:
             prev = raw[idx - 1]
@@ -68,11 +71,63 @@ def get_results(screenshot):
                 parsed_results.append([placement, name])
             except (ValueError, TypeError):
                 print(f"Warning: Could not parse rank for {name} (got: {prev_num})")
-                placement_parse_fix = int(input(f"What place did {name} get?"))   # Manual Input Fix
-                parsed_results.append([placement_parse_fix, name])
+                parsed_results.append(['error', name])
 
-    print(parsed_results)
+    # print(parsed_results)
     return parsed_results
+
+# GUI review
+def review_results_gui(results):
+    updated_results = []
+
+    def on_confirm():
+        try:
+            updated_results.clear()
+            for idx in range(len(entry_fields)):
+                place = int(entry_fields[idx][0].get())
+                name = entry_fields[idx][1].get().strip()
+                if name:
+                    updated_results.append((place, name))
+            window.destroy()
+        except ValueError:
+            messagebox.showerror("Error", "Placements must be valid numbers.")
+
+    def on_cancel():
+        updated_results.clear()
+        window.destroy()
+
+    window = tk.Tk()
+    window.title("Review OCR Results")
+    window.geometry("300x400")
+    window.resizable(False, False)
+
+    frame = tk.Frame(window)
+    frame.pack(pady=10)
+
+    tk.Label(frame, text="Placement", font=('Arial', 10, 'bold')).grid(row=0, column=0)
+    tk.Label(frame, text="Player", font=('Arial', 10, 'bold')).grid(row=0, column=1)
+
+    entry_fields = []
+    for i, (place, name) in enumerate(results):
+        place_var = tk.StringVar(value=str(place))
+        name_var = tk.StringVar(value=name)
+        place_entry = tk.Entry(frame, textvariable=place_var, width=5)
+        name_entry = tk.Entry(frame, textvariable=name_var, width=20)
+        place_entry.grid(row=i+1, column=0, padx=5, pady=2)
+        name_entry.grid(row=i+1, column=1, padx=5, pady=2)
+        entry_fields.append((place_var, name_var))
+
+    btn_frame = tk.Frame(window)
+    btn_frame.pack(pady=10)
+
+    confirm_btn = tk.Button(btn_frame, text="Confirm", command=on_confirm)
+    confirm_btn.pack(side=tk.LEFT, padx=10)
+
+    cancel_btn = tk.Button(btn_frame, text="Cancel", command=on_cancel)
+    cancel_btn.pack(side=tk.LEFT, padx=10)
+
+    window.mainloop()
+    return updated_results
 
 def save_race_results(results):
     conn = psycopg2.connect(**DB_CONFIG)
