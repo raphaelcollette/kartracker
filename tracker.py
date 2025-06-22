@@ -3,6 +3,7 @@ import time
 import threading
 import keyboard
 import mss
+import mss.tools
 import psycopg2
 import easyocr
 import discord
@@ -12,10 +13,24 @@ from watchdog.events import FileSystemEventHandler
 
 # Config
 SCREENSHOT_DIR = "screenshots"
+# add bot info here
 
 # OCR and Database Logic
 PLAYERS = ['Starz', 'ray', 'RAPH', 'bran', 'djtrader', 'BAKABAKABAKABAKABAKA',
-           'henry', 'Umbrella', 'jem', 'vortex', 'nut']
+           'henry', 'Umbrella', 'jem', 'vortex', 'nut', 'bunixmi']
+
+mario_kart_8_deluxe_chars = [
+    "Mario", "Luigi", "Peach", "Daisy", "Rosalina", "Tanooki Mario", "Cat Peach",
+    "Yoshi", "Toad", "Koopa Troopa", "Shy Guy", "Lakitu", "Toadette", "King Boo",
+    "Baby Mario", "Baby Luigi", "Baby Peach", "Baby Daisy", "Baby Rosalina",
+    "Metal Mario", "Pink Gold Peach", "Wario", "Waluigi", "Donkey Kong",
+    "Bowser", "Dry Bones", "Bowser Jr.", "Dry Bowser",
+    "Lemmy", "Larry", "Wendy", "Ludwig",
+    "Iggy", "Roy", "Morton",
+    "Inkling Girl", "Inkling Boy", "Link", "Villager",
+    "Isabelle", "Birdo", "Petey Piranha", "Wiggler", "Kamek",
+    "Diddy Kong", "Funky Kong", "Pauline", "Peachette", "Cat Peach", "Lemmy"
+]
 reader = easyocr.Reader(['en'])
 
 def get_ordinal(n):
@@ -25,41 +40,39 @@ def get_ordinal(n):
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
 
+
 def get_results(screenshot):
+    parsed_results = []
     raw = reader.readtext(screenshot, detail=0)
-    results = []
-    results2 = []
-    final = []
-    count = 1
-    for idx, val in enumerate(raw):
-        if val in PLAYERS and idx > 0:
-            results.append((count, val))
-            results2.append((raw[idx-1], val))
-            count += 1
+    first_match_found = False
+    for idx, name in enumerate(raw):
+        if name in PLAYERS:
+            prev = raw[idx - 1]
 
+            if not first_match_found:
+                if prev in ['7', 'I', 'l', '|', 'CONGRATULATIONSI'] or 'CON' in prev:  # OCR mistakes for '1'
+                    prev_num = '1'
+                elif prev == 'A':
+                    prev_num = '4'
+                else:
+                    prev_num = prev
+                first_match_found = True
+            else:
+                if prev == 'A':
+                    prev_num = '4'
+                else:
+                    prev_num = prev
 
-    ref_map = {name.lower(): num for num, name in results}
-    ocr_map = {}
+            try:
+                placement = int(prev_num)
+                parsed_results.append([placement, name])
+            except (ValueError, TypeError):
+                print(f"Warning: Could not parse rank for {name} (got: {prev_num})")
+                placement_parse_fix = int(input(f"What place did {name} get?"))   # Manual Input Fix
+                parsed_results.append([placement_parse_fix, name])
 
-    for score_str, name in results2:
-        try:
-            score = int(score_str)
-            ocr_map[name.lower()] = score
-        except ValueError:
-            continue
-
-    output = []
-
-    for num, name in results:
-        key = name.lower()
-        if key in ocr_map:
-            if ocr_map[key] >= num:
-                output.append((ocr_map[key], name))
-        else:
-            # Either not in OCR or OCR had invalid (non-int) value
-            output.append((num, name))
-    
-    return output
+    print(parsed_results)
+    return parsed_results
 
 def save_race_results(results):
     conn = psycopg2.connect(**DB_CONFIG)
@@ -142,7 +155,9 @@ def screenshot_loop():
         timestamp = int(time.time())
         path = os.path.join(SCREENSHOT_DIR, f"screenshot_{timestamp}.png")
         with mss.mss() as sct:
-            sct.shot(output=path)
+            monitor = sct.monitors[1]
+            sct_img = sct.grab(monitor)
+            mss.tools.to_png(sct_img.rgb, sct_img.size, output=path)
         print(f"Saved screenshot: {path}")
     keyboard.add_hotkey('F8', take_screenshot)
     print("Press F8 to screenshot. ESC to quit.")
