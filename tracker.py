@@ -18,6 +18,13 @@ PLAYERS = ['Starz', 'ray', 'RAPH', 'bran', 'djtrader', 'BAKABAKABAKABAKABAKA',
            'henry', 'Umbrella', 'jem', 'vortex', 'nut']
 reader = easyocr.Reader(['en'])
 
+def get_ordinal(n):
+    if 10 <= n % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
 def get_results(screenshot):
     raw = reader.readtext(screenshot, detail=0)
     results = []
@@ -43,7 +50,7 @@ def get_results(screenshot):
 
     output = []
 
-    for num, name in output:
+    for num, name in results:
         key = name.lower()
         if key in ocr_map:
             if ocr_map[key] >= num:
@@ -103,12 +110,12 @@ async def post_to_discord(results):
     if not channel:
         print("Channel not found.")
         return
-
-    msg = "**Race Results:**\n"
+    msg = "**Cup Results:**\n"
     for place, name in results:
         total, avg = get_stats(name) or (0, 0)  # handle None
+        ordinal_place = get_ordinal(place)
         avg = avg if avg else 0
-        msg += f"{place}. {name} — {total} races, avg place: {avg:.2f}\n"
+        msg += f"{ordinal_place}: {name} — {total} races, avg place: {avg:.2f}\n"
     await channel.send(msg)
 
 # Folder Watcher
