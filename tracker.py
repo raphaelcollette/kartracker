@@ -21,13 +21,38 @@ reader = easyocr.Reader(['en'])
 def get_results(screenshot):
     raw = reader.readtext(screenshot, detail=0)
     results = []
-    count = 1       
+    results2 = []
+    final = []
+    count = 1
     for idx, val in enumerate(raw):
         if val in PLAYERS and idx > 0:
             results.append((count, val))
+            results2.append((raw[idx-1], val))
             count += 1
-    print(results)
-    return results
+
+
+    ref_map = {name.lower(): num for num, name in results}
+    ocr_map = {}
+
+    for score_str, name in results2:
+        try:
+            score = int(score_str)
+            ocr_map[name.lower()] = score
+        except ValueError:
+            continue
+
+    output = []
+
+    for num, name in output:
+        key = name.lower()
+        if key in ocr_map:
+            if ocr_map[key] >= num:
+                output.append((ocr_map[key], name))
+        else:
+            # Either not in OCR or OCR had invalid (non-int) value
+            output.append((num, name))
+    
+    return output
 
 def save_race_results(results):
     conn = psycopg2.connect(**DB_CONFIG)
@@ -122,4 +147,3 @@ if __name__ == "__main__":
     threading.Thread(target=screenshot_loop, daemon=True).start()
     start_watcher()
     client.run(BOT_TOKEN)
-
