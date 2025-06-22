@@ -21,9 +21,11 @@ reader = easyocr.Reader(['en'])
 def get_results(screenshot):
     raw = reader.readtext(screenshot, detail=0)
     results = []
+    count = 1       
     for idx, val in enumerate(raw):
         if val in PLAYERS and idx > 0:
-            results.append((raw[idx-1], val))
+            results.append((count, val))
+            count += 1
     print(results)
     return results
 
