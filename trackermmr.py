@@ -299,12 +299,6 @@ async def on_ready():
     channel = client.get_channel(CHANNEL_ID)
     if channel is None:
         print("❌ Channel not found. Check CHANNEL_ID and bot permissions.")
-    else:
-        try:
-            await channel.send("✅ Bot is ready and can post messages.")
-            print("✅ Test message sent.")
-        except Exception as e:
-            print(f"❌ Failed to send message: {e}")
 
 @client.event
 async def on_message(message):
@@ -401,3 +395,4 @@ if __name__ == "__main__":
     threading.Thread(target=screenshot_loop, daemon=True).start()
     start_watcher()
     client.run(BOT_TOKEN)
+
